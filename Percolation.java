@@ -30,7 +30,7 @@ public class Percolation {
     }
     // is site (row i, column j) open?
     public boolean isOpen(int i,int j){
-        return condition[i][j]==1;       
+        return condition[i][j]==1;
     }
     // is site (row i, column j) full (connected to top)?
     public boolean isFull(int i,int j){}
