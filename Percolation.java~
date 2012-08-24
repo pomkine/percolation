@@ -8,14 +8,14 @@ public class Percolation {
    public Percolation(int N){ 
        rowLength=N;
        //+2 are cells on the top and on the bottom of the grid.
-       uf=new WeightedQuickUnionUF(N*N+3);
-       condition=new int[N*N+4];
+       uf=new WeightedQuickUnionUF(N*N+2);
+       condition=new int[N*N+2];
        for (int i=1;i<=N;i++){
            condition[i]=0;
        } 
        //opens cells on the top and the bottom
+       condition[N*N+1]=1;
        condition[N*N+2]=1;
-       condition[N*N+3]=1;
        
    }
        
@@ -23,23 +23,23 @@ public class Percolation {
    public void open(int i, int j) {  
        validate(i,j);
        if(!isOpen(i,j)){
-       condition[xyTo1D(i,j)]=1;
-       
+       condition[xyTo1D(i,j)]=1; 
        //if cell opened in first row
          if(i==1){
-           uf.union(xyTo1D(i,j),rowLength*rowLength+1); 
+           uf.union(rowLength*rowLength+1,xyTo1D(i,j)); 
            //if cell under is opened
            if(isOpen(i+1,j)){
                uf.union(xyTo1D(i,j),xyTo1D(i+1,j));
            }
-         } else {
+           else {
          //if cell opened in last row
          if(i==rowLength){
-             uf.union(xyTo1D(i,j),rowLength*rowLength+2);  
+             uf.union(rowLength*rowLength+2,xyTo1D(i,j));  
              //if cell over is opened
              if(isOpen(i-1,j)){
                uf.union(xyTo1D(i,j),xyTo1D(i-1,j));
-             }}else {
+           }
+             else {
          //if cell in the 1-st column (not 1st and last row)
          if(j==1){
              if(isOpen(i+1,j)){
@@ -50,7 +50,8 @@ public class Percolation {
              }
              if(isOpen(i-1,j)){
                   uf.union(xyTo1D(i,j),xyTo1D(i-1,j));
-             }}else {
+             }
+             else {
         //if cell in the last column (not 1st and last row)
          if (j==rowLength){
              if(isOpen(i,j-1)){
@@ -61,12 +62,14 @@ public class Percolation {
              }                
              if(isOpen(i-1,j)){
                   uf.union(xyTo1D(i,j),xyTo1D(i-1,j));
-             }} else {
-             if(isOpen(i+1,j)){
-                 uf.union(xyTo1D(i+1,j),xyTo1D(i,j));
+         }               
+
+             else {
+                 if(isOpen(i+1,j)){
+                 uf.union(xyTo1D(i,j),xyTo1D(i+1,j));
              }
              if(isOpen(i,j+1)){
-                 uf.union(xyTo1D(i,j+1),xyTo1D(i,j));
+                 uf.union(xyTo1D(i,j),xyTo1D(i,j+1));
              }
              if(isOpen(i-1,j)){
                   uf.union(xyTo1D(i,j),xyTo1D(i-1,j));
@@ -74,12 +77,17 @@ public class Percolation {
              if(isOpen(i,j-1)){
                   uf.union(xyTo1D(i,j),xyTo1D(i,j-1));
              }
+             }  
+         }
              }
-             }
-             }
+         }
+           }
          }
        }
    }
+       }
+   }
+     
    
    // is site (row i, column j) open?
    public boolean isOpen(int i, int j) {
@@ -107,7 +115,12 @@ public class Percolation {
    //validating indices
    private void validate(int i, int j){
        if(i>rowLength||j>rowLength||i<1||j<1){
-           throw new  IndexOutOfBoundsException();
+           throw new IllegalArgumentException();
        }
+   }
+   
+   public void main (String [] args){
+     Percolation perc=new Percolation(10);
+     perc.open(1,1);
    }
 }
