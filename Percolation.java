@@ -1,113 +1,79 @@
+
 public class Percolation {
-   private WeightedQuickUnionUF uf;   
-   //site is opened or closed
-   private int [] condition;
-   private int rowLength;
-   
-    // create N-by-N grid, with all sites blocked
-   public Percolation(int N){ 
-       rowLength=N;
-       //+2 are cells on the top and on the bottom of the grid.
-       uf=new WeightedQuickUnionUF(N*N+3);
-       condition=new int[N*N+4];
-       for (int i=1;i<=N;i++){
-           condition[i]=0;
-       } 
-       //opens cells on the top and the bottom
-       condition[N*N+2]=1;
-       condition[N*N+3]=1;
-       
-   }
-       
-   // open site (row i, column j) if it is not already
-   public void open(int i, int j) {  
-       validate(i,j);
-       if(!isOpen(i,j)){
-       condition[xyTo1D(i,j)]=1;
-       
-       //if cell opened in first row
-         if(i==1){
-           uf.union(xyTo1D(i,j),rowLength*rowLength+1); 
-           //if cell under is opened
-           if(isOpen(i+1,j)){
-               uf.union(xyTo1D(i,j),xyTo1D(i+1,j));
-           }
-         } else {
-         //if cell opened in last row
-         if(i==rowLength){
-             uf.union(xyTo1D(i,j),rowLength*rowLength+2);  
-             //if cell over is opened
-             if(isOpen(i-1,j)){
-               uf.union(xyTo1D(i,j),xyTo1D(i-1,j));
-             }}else {
-         //if cell in the 1-st column (not 1st and last row)
-         if(j==1){
-             if(isOpen(i+1,j)){
-                 uf.union(xyTo1D(i,j),xyTo1D(i+1,j));
-             }
-             if(isOpen(i,j+1)){
-                 uf.union(xyTo1D(i,j),xyTo1D(i,j+1));
-             }
-             if(isOpen(i-1,j)){
-                  uf.union(xyTo1D(i,j),xyTo1D(i-1,j));
-             }}else {
-        //if cell in the last column (not 1st and last row)
-         if (j==rowLength){
-             if(isOpen(i,j-1)){
-                 uf.union(xyTo1D(i,j),xyTo1D(i,j-1));
-             }
-             if(isOpen(i+1,j)){
-                 uf.union(xyTo1D(i,j),xyTo1D(i+1,j));
-             }                
-             if(isOpen(i-1,j)){
-                  uf.union(xyTo1D(i,j),xyTo1D(i-1,j));
-             }} else {
-             if(isOpen(i+1,j)){
-                 uf.union(xyTo1D(i+1,j),xyTo1D(i,j));
-             }
-             if(isOpen(i,j+1)){
-                 uf.union(xyTo1D(i,j+1),xyTo1D(i,j));
-             }
-             if(isOpen(i-1,j)){
-                  uf.union(xyTo1D(i,j),xyTo1D(i-1,j));
-             }
-             if(isOpen(i,j-1)){
-                  uf.union(xyTo1D(i,j),xyTo1D(i,j-1));
-             }
-             }
-             }
-             }
+  //0-closed, 1-open
+  private int [] states;
+  private int side;
+  private WeightedQuickUnionUF cellStorage;
+// create N-by-N grid, with all sites blocked
+     public Percolation(int N){
+       side=N;
+        //+2 are for additional top and bottom cells
+       cellStorage=new WeightedQuickUnionUF(N*N+2);      
+       states=new int[N*N+2];
+       for(int index=0;index<N*N;index++){
+           states[index]=0;
+       }
+       states[N*N]=1;
+       states[N*N+1]=1;            
+     }  
+   // open site (row i, column j) if it is not already  
+     public void open(int i, int j){ 
+       checkRange(i,j);
+       if(isOpen(i,j))return;       
+       int cell=getCellIndex(i,j);
+       states[cell]=1;
+       //if not top row
+       if(i!=1 && isOpen(i-1,j)){
+          union(getCellIndex(i-1,j),cell);
+       }else if(i==1){
+          //connect to virtual top cell
+         union(cell,side*side);
+       }
+       //if not bottom row
+       if(i!=side && isOpen(i+1,j)){       
+         union(getCellIndex(i+1,j),cell);
+       }else if (i==side){
+          //connect to virtual bottom cell
+          union(cell,side*side+1);
+       }
+       //if not left border
+       if(j!=1 && isOpen(i,j-1)){
+         union(getCellIndex(i,j-1),cell);
+       }
+       //if not right border
+        if(j!=side && isOpen(i,j+1)){
+         union(getCellIndex(i,j+1),cell);
+       }
+     }
+     
+     private void checkRange(int i, int j){
+       if (i<=0||j<=0||i>side||j>side)throw new IndexOutOfBoundsException();
+     }
+     
+     private void union(int a, int b){
+         if (!cellStorage.connected(a,b)){
+           cellStorage.union(a,b);
          }
-       }
-   }
-   
-   // is site (row i, column j) open?
-   public boolean isOpen(int i, int j) {
-       validate(i,j);
-       return condition[xyTo1D(i,j)]==1;
-   }
-   
-   // is site (row i, column j) full?
-   public boolean isFull(int i, int j) {
-       validate(i,j);       
-       return isOpen(i,j) && uf.connected(rowLength*rowLength+1,xyTo1D(i,j));          
-   }  
-   
-   // does the system percolate?
-   public boolean percolates() {
-       return uf.connected(rowLength*rowLength+1,rowLength*rowLength+2);
-   
-   }  
-   
-   //Converts 2D coordinates to 1D
-   private int  xyTo1D(int i, int j){
-       return rowLength*(i-1)+j;
-   }
-   
-   //validating indices
-   private void validate(int i, int j){
-       if(i>rowLength||j>rowLength||i<1||j<1){
-           throw new  IndexOutOfBoundsException();
-       }
-   }
+     }
+     
+     // is site (row i, column j) open?
+     public boolean isOpen(int i, int j){
+       checkRange(i,j);
+       return states[getCellIndex(i,j)]==1;
+     }   
+     
+      // is site (row i, column j) full?
+     public boolean isFull(int i, int j){
+       checkRange(i,j);
+       return cellStorage.connected(side*side,getCellIndex(i,j));
+     }   
+     
+      // does the system percolate?
+     public boolean percolates(){
+       return cellStorage.connected(side*side,side*side+1);
+     }           
+     
+     private int getCellIndex(int row, int column){
+       return (side*(row-1))+column-1;
+     }
 }
